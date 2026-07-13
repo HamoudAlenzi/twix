@@ -1,0 +1,11 @@
+node_modules/
+*.log
+.env
+.env.*
+data.json
+data.json.tmp
+data.json.bak
+.DS_Store
+.vscode/
+.idea/
+!logo.png

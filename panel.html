@@ -1,0 +1,841 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Warzone Services — Command Center</title>
+<link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@500;600;700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+<style>
+:root{
+  --bg:#070a08; --bg-1:#0c110d; --bg-2:#121a14; --bg-3:#18231b; --bg-input:#0d1410;
+  --border:#1e2c22; --border-2:#2c4033;
+  --fg:#eaf5ee; --fg-mut:#8fa898; --fg-dim:#5c7365;
+  --green:#57f287; --green-2:#2fbf68; --green-dim:rgba(87,242,135,.12); --green-glow:rgba(87,242,135,.3);
+  --amber:#f0b232; --amber-dim:rgba(240,178,50,.12);
+  --red:#ff5a5f; --red-dim:rgba(255,90,95,.12);
+  --blue:#4fa8ff; --blue-dim:rgba(79,168,255,.12);
+  --r:12px; --r-lg:16px;
+  --shadow:0 12px 40px rgba(0,0,0,.55);
+  --tr:.16s ease;
+}
+*{margin:0;padding:0;box-sizing:border-box}
+html,body{height:100%}
+body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--fg);min-height:100vh;overflow-x:hidden}
+body::before{content:'';position:fixed;inset:0;pointer-events:none;z-index:0;background:
+  radial-gradient(ellipse at 20% 0%, rgba(87,242,135,.06), transparent 55%),
+  radial-gradient(ellipse at 90% 100%, rgba(240,178,50,.05), transparent 50%),
+  repeating-linear-gradient(0deg, transparent 0 39px, rgba(87,242,135,.02) 39px 40px)}
+::-webkit-scrollbar{width:9px;height:9px}
+::-webkit-scrollbar-thumb{background:var(--border-2);border-radius:5px}
+h1,h2,h3,.brand-font{font-family:'Rajdhani',sans-serif;letter-spacing:.4px;text-transform:uppercase}
+input,textarea,select,button{font-family:inherit}
+a{color:var(--green);text-decoration:none}
+.mono{font-family:'JetBrains Mono',monospace}
+
+/* LOGIN */
+.login-screen{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;z-index:1000;background:radial-gradient(circle at center, var(--bg-2), var(--bg))}
+.login-card{background:rgba(18,26,20,.85);backdrop-filter:blur(18px);border:1px solid var(--border-2);border-radius:20px;padding:46px 42px;width:430px;max-width:92vw;box-shadow:var(--shadow),0 0 60px rgba(87,242,135,.08);animation:up .5s ease}
+.login-logo{width:74px;height:74px;margin:0 auto 18px;border-radius:16px;background:linear-gradient(135deg,var(--green-2),#0d3320);display:flex;align-items:center;justify-content:center;font-size:34px;box-shadow:0 8px 26px var(--green-glow)}
+.login-title{text-align:center;font-size:28px;font-weight:700;color:var(--green)}
+.login-sub{text-align:center;color:var(--fg-mut);font-size:12px;margin-bottom:28px;letter-spacing:2px;text-transform:uppercase}
+.field{margin-bottom:16px}
+.field label{display:block;font-size:11px;color:var(--fg-mut);margin-bottom:6px;font-weight:600;text-transform:uppercase;letter-spacing:.8px}
+.field input,.field textarea,.field select{width:100%;background:var(--bg-input);border:1px solid var(--border);border-radius:9px;padding:11px 13px;color:var(--fg);font-size:13.5px;outline:none;transition:var(--tr)}
+.field input:focus,.field textarea:focus,.field select:focus{border-color:var(--green-2);box-shadow:0 0 0 3px var(--green-dim)}
+.field textarea{min-height:80px;resize:vertical}
+.btn-login{width:100%;background:linear-gradient(135deg,var(--green-2),#1a8a4a);color:#03130a;border:none;padding:13px;border-radius:9px;font-size:14px;font-weight:800;cursor:pointer;transition:var(--tr);box-shadow:0 4px 18px var(--green-glow);font-family:'Rajdhani';text-transform:uppercase;letter-spacing:1px}
+.btn-login:hover{transform:translateY(-2px)}
+.login-error{color:var(--red);font-size:13px;text-align:center;margin-top:12px;min-height:18px}
+@keyframes up{from{opacity:0;transform:translateY(18px)}to{opacity:1;transform:none}}
+@keyframes fade{from{opacity:0}to{opacity:1}}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.45}}
+
+/* LAYOUT */
+.app{display:flex;height:100vh;overflow:hidden;position:relative;z-index:1}
+.sidebar{width:236px;background:rgba(10,15,11,.92);backdrop-filter:blur(16px);border-right:1px solid var(--border);display:flex;flex-direction:column;flex-shrink:0}
+.side-head{padding:20px 16px;display:flex;align-items:center;gap:12px;border-bottom:1px solid var(--border)}
+.side-logo{width:42px;height:42px;border-radius:11px;background:linear-gradient(135deg,var(--green-2),#0d3320);display:flex;align-items:center;justify-content:center;font-size:21px;flex-shrink:0;box-shadow:0 4px 14px var(--green-glow)}
+.side-brand h1{font-size:17px;font-weight:700;color:var(--green);line-height:1.1}
+.side-brand span{font-size:10px;color:var(--fg-mut);letter-spacing:1.6px;text-transform:uppercase}
+.side-nav{flex:1;padding:12px 10px;overflow-y:auto}
+.nav-sec{font-size:10px;color:var(--fg-dim);text-transform:uppercase;letter-spacing:1.6px;padding:12px 12px 5px;font-weight:700}
+.nav-it{display:flex;align-items:center;gap:11px;padding:10px 13px;border-radius:9px;color:var(--fg-mut);font-size:13.5px;font-weight:500;cursor:pointer;transition:var(--tr);margin-bottom:2px;user-select:none}
+.nav-it:hover{background:var(--bg-2);color:var(--fg)}
+.nav-it.active{background:linear-gradient(90deg,var(--green-dim),transparent);color:var(--green);box-shadow:inset 3px 0 0 var(--green)}
+.nav-it i{width:17px;text-align:center;font-size:13px}
+.nav-it .badge{margin-left:auto;background:var(--amber);color:#000;font-size:10px;font-weight:800;padding:1px 7px;border-radius:8px}
+.side-foot{padding:12px;border-top:1px solid var(--border)}
+.bot-chip{display:flex;align-items:center;gap:9px;padding:8px 10px;background:var(--bg-2);border-radius:9px;font-size:12px}
+.bot-chip .dot{width:8px;height:8px;border-radius:50%;background:var(--green);box-shadow:0 0 8px var(--green);animation:pulse 2s infinite}
+.bot-chip .dot.off{background:var(--red);box-shadow:0 0 8px var(--red)}
+.btn-out{width:100%;background:var(--bg-2);border:1px solid var(--border);color:var(--fg-mut);padding:8px;border-radius:8px;font-size:12px;cursor:pointer;margin-top:8px;transition:var(--tr)}
+.btn-out:hover{background:var(--red-dim);color:var(--red);border-color:var(--red)}
+.main{flex:1;display:flex;flex-direction:column;overflow:hidden}
+.topbar{height:60px;border-bottom:1px solid var(--border);display:flex;align-items:center;padding:0 22px;background:rgba(10,15,11,.8);backdrop-filter:blur(14px);gap:14px}
+.topbar h2{font-size:19px;font-weight:700;flex:1;color:var(--fg)}
+.content{flex:1;overflow-y:auto;padding:22px}
+
+/* COMPONENTS */
+.btn{display:inline-flex;align-items:center;gap:8px;background:var(--bg-2);border:1px solid var(--border-2);color:var(--fg);padding:9px 15px;border-radius:9px;font-size:13px;font-weight:600;cursor:pointer;transition:var(--tr)}
+.btn:hover{background:var(--bg-3);border-color:var(--green-2)}
+.btn-primary{background:linear-gradient(135deg,var(--green-2),#1a8a4a);border:none;color:#03130a;font-weight:800;box-shadow:0 4px 14px var(--green-glow)}
+.btn-primary:hover{transform:translateY(-1px)}
+.btn-danger{background:var(--red-dim);border-color:var(--red);color:var(--red)}
+.btn-danger:hover{background:var(--red);color:#fff}
+.btn-success{background:var(--green-dim);border-color:var(--green-2);color:var(--green)}
+.btn-success:hover{background:var(--green-2);color:#03130a}
+.btn-warn{background:var(--amber-dim);border-color:var(--amber);color:var(--amber)}
+.btn-sm{padding:6px 11px;font-size:12px;border-radius:8px}
+.card{background:var(--bg-1);border:1px solid var(--border);border-radius:var(--r-lg);padding:18px;margin-bottom:16px}
+.card h3{font-size:14px;font-weight:700;margin-bottom:13px;display:flex;align-items:center;gap:9px;color:var(--fg)}
+.card h3 i{color:var(--green)}
+.stat-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:14px;margin-bottom:20px}
+.stat{background:var(--bg-1);border:1px solid var(--border);border-radius:var(--r-lg);padding:17px;position:relative;overflow:hidden;transition:var(--tr)}
+.stat:hover{transform:translateY(-2px);border-color:var(--border-2)}
+.stat::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;background:var(--green)}
+.stat.amber::before{background:var(--amber)}
+.stat.red::before{background:var(--red)}
+.stat.blue::before{background:var(--blue)}
+.stat .lb{font-size:10.5px;color:var(--fg-mut);text-transform:uppercase;letter-spacing:1.2px;margin-bottom:7px;font-weight:700}
+.stat .vl{font-size:26px;font-weight:800;font-family:'Rajdhani'}
+.stat .sb{font-size:11px;color:var(--fg-dim);margin-top:3px}
+.stat .ic{position:absolute;top:15px;right:15px;width:36px;height:36px;border-radius:10px;background:var(--green-dim);color:var(--green);display:flex;align-items:center;justify-content:center;font-size:16px}
+.stat.amber .ic{background:var(--amber-dim);color:var(--amber)}
+.stat.red .ic{background:var(--red-dim);color:var(--red)}
+.stat.blue .ic{background:var(--blue-dim);color:var(--blue)}
+.tag{display:inline-flex;align-items:center;padding:3px 10px;border-radius:14px;font-size:10.5px;font-weight:800;text-transform:uppercase;letter-spacing:.6px}
+.tag.g{background:var(--green-dim);color:var(--green)}
+.tag.a{background:var(--amber-dim);color:var(--amber)}
+.tag.r{background:var(--red-dim);color:var(--red)}
+.tag.b{background:var(--blue-dim);color:var(--blue)}
+.tag.mut{background:#20281f;color:var(--fg-mut)}
+.tbl{width:100%;border-collapse:collapse}
+.tbl th{text-align:left;font-size:10.5px;color:var(--fg-mut);text-transform:uppercase;letter-spacing:1px;padding:9px 11px;border-bottom:1px solid var(--border);font-weight:700}
+.tbl td{padding:11px;border-bottom:1px solid var(--border);font-size:13px;vertical-align:middle}
+.tbl tr:hover td{background:var(--bg-2)}
+.row2{display:grid;grid-template-columns:1fr 1fr;gap:13px;margin-bottom:13px}
+.row3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:13px;margin-bottom:13px}
+.svc-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(290px,1fr));gap:14px}
+.svc-card{background:var(--bg-1);border:1px solid var(--border);border-radius:var(--r-lg);overflow:hidden;transition:var(--tr)}
+.svc-card:hover{border-color:var(--green-2);transform:translateY(-3px);box-shadow:var(--shadow)}
+.svc-head{padding:15px 15px 0;display:flex;align-items:center;gap:10px}
+.svc-emoji{width:44px;height:44px;border-radius:11px;background:var(--bg-3);display:flex;align-items:center;justify-content:center;font-size:21px;flex-shrink:0}
+.svc-head h4{font-size:14.5px;font-weight:700;line-height:1.25}
+.svc-body{padding:11px 15px 14px}
+.svc-desc{font-size:12px;color:var(--fg-mut);margin-bottom:9px;min-height:30px}
+.svc-meta{display:flex;gap:10px;flex-wrap:wrap;font-size:11.5px;color:var(--fg-mut)}
+.svc-price{font-size:19px;font-weight:800;color:var(--amber);font-family:'Rajdhani';margin:7px 0 2px}
+.svc-actions{display:flex;gap:6px;padding:0 15px 15px}
+.svc-actions .btn{flex:1;justify-content:center;font-size:11.5px;padding:7px 6px}
+.modal-ov{position:fixed;inset:0;background:rgba(0,0,0,.75);backdrop-filter:blur(5px);z-index:500;display:none;align-items:center;justify-content:center;padding:18px}
+.modal-ov.show{display:flex;animation:fade .18s ease}
+.modal{background:var(--bg-1);border:1px solid var(--border-2);border-radius:var(--r-lg);width:94%;max-width:640px;max-height:92vh;overflow-y:auto;box-shadow:var(--shadow);animation:up .25s ease}
+.modal-h{padding:16px 20px;border-bottom:1px solid var(--border);display:flex;align-items:center;position:sticky;top:0;background:var(--bg-1);z-index:5}
+.modal-h h3{font-size:16px;font-weight:700;flex:1}
+.modal-h .x{background:none;border:none;color:var(--fg-mut);font-size:22px;cursor:pointer;width:30px;height:30px;border-radius:7px}
+.modal-h .x:hover{background:var(--bg-2);color:var(--fg)}
+.modal-b{padding:20px}
+.modal-f{padding:14px 20px;border-top:1px solid var(--border);display:flex;gap:8px;justify-content:flex-end;position:sticky;bottom:0;background:var(--bg-1)}
+.toasts{position:fixed;top:18px;right:18px;z-index:2000;display:flex;flex-direction:column;gap:9px}
+.toast{background:var(--bg-1);border:1px solid var(--border-2);border-left:4px solid var(--green);padding:13px 16px;border-radius:10px;box-shadow:var(--shadow);min-width:260px;max-width:380px;display:flex;align-items:center;gap:11px;animation:up .25s ease;font-size:13px}
+.toast.err{border-left-color:var(--red)}
+.toast.warn{border-left-color:var(--amber)}
+.toast i{font-size:16px}
+.toast.ok i{color:var(--green)}.toast.err i{color:var(--red)}.toast.warn i{color:var(--amber)}
+.empty{text-align:center;padding:44px 18px;color:var(--fg-mut)}
+.empty i{font-size:42px;margin-bottom:11px;color:var(--fg-dim);display:block}
+.page{display:none;animation:fade .25s ease}
+.page.active{display:block}
+.page-h{display:flex;align-items:center;justify-content:space-between;margin-bottom:18px;flex-wrap:wrap;gap:10px}
+.page-h h2{font-size:21px;font-weight:700}
+.page-h p{color:var(--fg-mut);font-size:12.5px;margin-top:2px;font-family:'Inter';text-transform:none;letter-spacing:0}
+.chart-wrap{height:210px;display:flex;align-items:flex-end;gap:4px;padding-bottom:6px}
+.cbar{flex:1;background:linear-gradient(180deg,var(--green),var(--green-2));border-radius:4px 4px 0 0;min-height:2px;position:relative;cursor:pointer;transition:var(--tr)}
+.cbar:hover{filter:brightness(1.35)}
+.cbar .tip{position:absolute;bottom:100%;left:50%;transform:translateX(-50%);background:var(--bg);border:1px solid var(--border-2);padding:4px 8px;border-radius:6px;font-size:11px;white-space:nowrap;opacity:0;pointer-events:none;margin-bottom:5px;transition:var(--tr)}
+.cbar:hover .tip{opacity:1}
+.chart-lbls{display:flex;gap:4px}
+.chart-lbls span{flex:1;text-align:center;font-size:9.5px;color:var(--fg-dim)}
+.check-row{display:flex;align-items:center;gap:10px;padding:7px 0;border-bottom:1px solid var(--border);font-size:13px}
+.hidden{display:none!important}
+.mut{color:var(--fg-mut)}.xs{font-size:11px}.sm{font-size:12px}
+.mt2{margin-top:8px}.mt3{margin-top:12px}.mb2{margin-bottom:8px}.mb3{margin-bottom:12px}
+.flex{display:flex}.g2{gap:8px}.wrap{flex-wrap:wrap}.ac{align-items:center}
+@media(max-width:900px){.sidebar{position:fixed;left:0;top:0;bottom:0;z-index:100;transform:translateX(-100%)}.sidebar.open{transform:none}.row2,.row3{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+
+<div class="login-screen" id="loginScreen">
+  <div class="login-card">
+    <div class="login-logo">🎯</div>
+    <div class="login-title">Warzone Services</div>
+    <div class="login-sub">Command Center</div>
+    <form onsubmit="return doLogin(event)">
+      <div class="field">
+        <label>Panel Password</label>
+        <input type="password" id="loginPassword" placeholder="••••••••" required autocomplete="current-password">
+      </div>
+      <button type="submit" class="btn-login" id="loginBtn"><i class="fa-solid fa-shield-halved"></i> Enter Command Center</button>
+      <div class="login-error" id="loginError"></div>
+    </form>
+  </div>
+</div>
+
+<div class="app" id="app" style="display:none">
+  <aside class="sidebar" id="sidebar">
+    <div class="side-head">
+      <div class="side-logo">🎯</div>
+      <div class="side-brand"><h1>WZ Services</h1><span>Command Center</span></div>
+    </div>
+    <nav class="side-nav">
+      <div class="nav-sec">Overview</div>
+      <div class="nav-it active" data-page="dashboard"><i class="fa-solid fa-gauge-high"></i> Dashboard</div>
+      <div class="nav-sec">Store</div>
+      <div class="nav-it" data-page="services"><i class="fa-solid fa-crosshairs"></i> Services</div>
+      <div class="nav-it" data-page="coupons"><i class="fa-solid fa-tag"></i> Coupons</div>
+      <div class="nav-sec">Sales</div>
+      <div class="nav-it" data-page="payments"><i class="fa-solid fa-money-bill-wave"></i> Payments <span class="badge" id="payBadge" style="display:none">0</span></div>
+      <div class="nav-it" data-page="tickets"><i class="fa-solid fa-ticket"></i> Tickets <span class="badge" id="tickBadge" style="display:none">0</span></div>
+      <div class="nav-it" data-page="orders"><i class="fa-solid fa-receipt"></i> Orders</div>
+      <div class="nav-it" data-page="customers"><i class="fa-solid fa-users"></i> Customers</div>
+      <div class="nav-sec">System</div>
+      <div class="nav-it" data-page="setup"><i class="fa-solid fa-wand-magic-sparkles"></i> Server Setup</div>
+      <div class="nav-it" data-page="settings"><i class="fa-solid fa-gear"></i> Settings</div>
+      <div class="nav-it" data-page="logs"><i class="fa-solid fa-list"></i> Logs</div>
+    </nav>
+    <div class="side-foot">
+      <div class="bot-chip"><div class="dot" id="botDot"></div><div><b id="botTxt" style="font-size:12px">Connecting…</b><div class="xs mut">Discord Bot</div></div></div>
+      <button class="btn-out" onclick="doLogout()"><i class="fa-solid fa-right-from-bracket"></i> Logout</button>
+    </div>
+  </aside>
+  <div class="main">
+    <header class="topbar">
+      <h2 id="pageTitle">Dashboard</h2>
+      <button class="btn btn-sm" onclick="refreshAll(true)"><i class="fa-solid fa-rotate"></i> Refresh</button>
+      <button class="btn btn-primary btn-sm" onclick="openServiceModal()"><i class="fa-solid fa-plus"></i> New Service</button>
+    </header>
+    <div class="content" id="content"></div>
+  </div>
+</div>
+
+<div class="modal-ov" id="modalOv"><div class="modal" id="modal"></div></div>
+<div class="toasts" id="toasts"></div>
+<script>
+// ===== Warzone Services — Command Center logic =====
+const API = '/api';
+let SESSION = localStorage.getItem('wz_session') || '';
+let PAGE = 'dashboard';
+let C = { stats:{}, services:[], orders:[], payments:[], tickets:[], customers:[], coupons:[], settings:{}, logs:[], guilds:[] };
+let _modalOpen = false, _typing = false;
+
+const KIND_INFO = {
+  ladder: { emoji:'🏆', label:'Rank Boost (ladder)', hint:'Buyer picks current → target rank; price per tier.' },
+  multi: { emoji:'🔫', label:'Multi-Select (guns / camos)', hint:'Buyer multi-selects items; prices add up.' },
+  package: { emoji:'📦', label:'Packages (wins / kills / nuke / levels)', hint:'Buyer multi-selects fixed packages.' }
+};
+const WZ_RANKS_TEXT = '🥉 Bronze\n🥈 Silver\n🥇 Gold\n💠 Platinum\n💎 Diamond\n🔴 Crimson\n🟣 Iridescent\n👑 Top 250';
+const GUNS_PRESET = ['# 🔫 Assault Rifles','🔫 AK-27:13','🔫 M15 MOD 0:13','🔫 MXR-17:13','🔫 X9 Maverick:13','🔫 Peacemaker MK1:13','# 💨 SMGs','💨 Dravec 45:11','💨 Kogot-7:11','💨 VX Compact:11','💨 C9:11','# 🎯 Snipers & Marksman','🎯 LW3I Tundra:12','🎯 HDR:12','🎯 KRS-7.62:12','# ⛓️ LMGs & Shotguns','⛓️ GPMG-7:12','⛓️ BRUEN MK9:12','💥 Marine Breacher:12'].join('\n');
+const CAMOS_PRESET = ['# 🎨 Mastery Camos','🔥 Molten Gold:12','⚡ Arclight:15','🌀 Void Stripe:20','💎 Diamond:25','🌌 Singularity:30','🌋 Apocalypse:28','🌑 Dark Matter:35'].join('\n');
+const GUNPICK_PRESET = ['🔫 AK-27','🔫 M15 MOD 0','🔫 MXR-17','💨 Dravec 45','💨 Kogot-7','🎯 LW3I Tundra','🎯 HDR'].join('\n');
+
+// ===== AUTH & API =====
+async function api(ep, opts={}) {
+  const r = await fetch(API + '/' + ep, { ...opts, headers: { 'Content-Type':'application/json', 'x-session': SESSION, ...(opts.headers||{}) } });
+  if (r.status === 401) { showLogin(); throw new Error('Unauthorized'); }
+  const text = await r.text();
+  let data; try { data = JSON.parse(text); } catch { data = text; }
+  if (!r.ok) throw new Error((data && data.error) || ('Request failed (' + r.status + ')'));
+  return data;
+}
+async function checkAuth() {
+  if (!SESSION) return showLogin();
+  try { const r = await api('check-auth'); r.authenticated ? showApp() : showLogin(); }
+  catch { showLogin(); }
+}
+function showLogin(){ document.getElementById('loginScreen').style.display='flex'; document.getElementById('app').style.display='none'; }
+function showApp(){ document.getElementById('loginScreen').style.display='none'; document.getElementById('app').style.display='flex'; refreshAll(true); if (window._poll) clearInterval(window._poll); window._poll = setInterval(pollBadges, 20000); }
+async function doLogin(e) {
+  e.preventDefault();
+  const btn = document.getElementById('loginBtn');
+  btn.disabled = true;
+  try {
+    const r = await fetch(API + '/login', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ password: document.getElementById('loginPassword').value }) });
+    const d = await r.json();
+    if (r.ok && d.token) { SESSION = d.token; localStorage.setItem('wz_session', SESSION); document.getElementById('loginError').textContent=''; showApp(); toast('ok','Welcome back, commander!'); }
+    else document.getElementById('loginError').textContent = d.error || 'Login failed';
+  } catch { document.getElementById('loginError').textContent = 'Connection error'; }
+  btn.disabled = false;
+  return false;
+}
+function doLogout(){ fetch(API+'/logout',{method:'POST',headers:{'x-session':SESSION}}).catch(()=>{}); SESSION=''; localStorage.removeItem('wz_session'); showLogin(); }
+
+// ===== HELPERS =====
+function toast(type,msg){
+  const t=document.createElement('div');
+  t.className='toast '+type;
+  const ic={ok:'fa-circle-check',err:'fa-circle-xmark',warn:'fa-triangle-exclamation'}[type]||'fa-circle-info';
+  t.innerHTML=`<i class="fa-solid ${ic}"></i><div>${msg}</div>`;
+  document.getElementById('toasts').appendChild(t);
+  setTimeout(()=>{t.style.opacity='0';setTimeout(()=>t.remove(),300)},3800);
+}
+function esc(s){ if(s==null)return''; return String(s).replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'})[m]); }
+function val(id){ return (document.getElementById(id)?.value||'').trim(); }
+function emojiStr(e){ if(!e)return''; if(typeof e==='object')return '<:'+e.name+':'+e.id+'>'; return e; }
+function cur(){ return C.settings.currency || '$'; }
+function startPrice(svc){
+  const cfg=svc.config||{};
+  if(svc.kind==='ladder')return cfg.pricePerTier||0;
+  if(svc.kind==='multi'){const ps=(cfg.categories||[]).flatMap(c=>c.items).map(i=>i.price!=null?i.price:cfg.defaultPrice||0).filter(p=>p>0);return ps.length?Math.min(...ps):(cfg.defaultPrice||0);}
+  if(svc.kind==='package'){const ps=(cfg.packages||[]).map(p=>p.price||0).filter(p=>p>0);return ps.length?Math.min(...ps):0;}
+  return 0;
+}
+function showModal(html){ document.getElementById('modal').innerHTML=html; document.getElementById('modalOv').classList.add('show'); _modalOpen=true; }
+function closeModal(){ document.getElementById('modalOv').classList.remove('show'); _modalOpen=false; refreshAll(true); }
+document.getElementById('modalOv').addEventListener('click',e=>{ if(e.target.id==='modalOv') closeModal(); });
+document.addEventListener('focusin',e=>{ if(['input','textarea','select'].includes((e.target.tagName||'').toLowerCase())) _typing=true; });
+document.addEventListener('focusout',()=>{ setTimeout(()=>{ const a=(document.activeElement?.tagName||'').toLowerCase(); if(!['input','textarea','select'].includes(a)) _typing=false; },200); });
+
+// ===== REFRESH =====
+async function refreshAll(force){
+  try{
+    const [stats,services,orders,payments,tickets,customers,coupons,settings,logs,guilds] = await Promise.all([
+      api('stats'),api('services'),api('orders'),api('payments'),api('tickets'),api('customers'),api('coupons'),api('settings'),api('logs'),api('guilds').catch(()=>[])
+    ]);
+    C={stats,services,orders,payments,tickets,customers,coupons,settings,logs,guilds};
+    paintBadges();
+    if(force && !_modalOpen && !_typing) renderPage();
+  }catch(e){ if(e.message==='Unauthorized') showLogin(); }
+}
+async function pollBadges(){ if(_modalOpen||_typing)return; try{ C.stats=await api('stats'); paintBadges(); }catch(e){} }
+function paintBadges(){
+  const s=C.stats||{};
+  const dot=document.getElementById('botDot'), txt=document.getElementById('botTxt');
+  if(s.botOnline){dot.classList.remove('off');txt.textContent='Bot Online';}else{dot.classList.add('off');txt.textContent='Bot Offline';}
+  const pb=document.getElementById('payBadge'); if(s.pendingPayments>0){pb.textContent=s.pendingPayments;pb.style.display='inline-flex';}else pb.style.display='none';
+  const tb=document.getElementById('tickBadge'); if(s.openTickets>0){tb.textContent=s.openTickets;tb.style.display='inline-flex';}else tb.style.display='none';
+}
+
+// ===== NAV =====
+document.querySelectorAll('.nav-it').forEach(it=>it.addEventListener('click',()=>{
+  document.querySelectorAll('.nav-it').forEach(n=>n.classList.remove('active'));
+  it.classList.add('active'); PAGE=it.dataset.page; renderPage();
+}));
+function goto(p){ const n=document.querySelector(`.nav-it[data-page="${p}"]`); if(n)n.click(); }
+function renderPage(){
+  const titles={dashboard:'Dashboard',services:'Services',coupons:'Coupons',payments:'Payments',tickets:'Tickets',orders:'Orders',customers:'Customers',setup:'Server Setup',settings:'Settings',logs:'Logs'};
+  document.getElementById('pageTitle').textContent=titles[PAGE]||'Dashboard';
+  const r={dashboard:rDash,services:rServices,coupons:rCoupons,payments:rPayments,tickets:rTickets,orders:rOrders,customers:rCustomers,setup:rSetup,settings:rSettings,logs:rLogs};
+  (r[PAGE]||rDash)(document.getElementById('content'));
+}
+
+// ===== DASHBOARD =====
+function rDash(c){
+  const s=C.stats||{}, st=C.settings||{};
+  const pm=st.payments||{};
+  const checks=[
+    {ok:!!s.botOnline,l:'Discord bot connected',f:'Check DISCORD_TOKEN on Railway'},
+    {ok:!!st.ticketCategoryId,l:'Server organized (channels + ticket category)',f:'Run Server Setup →'},
+    {ok:!!st.ownerId,l:'Owner Discord ID set (order alert DMs)',f:'Settings → Owner ID'},
+    {ok:!!((pm.stcPay&&pm.stcPay.number)||(pm.alrajhi&&pm.alrajhi.iban)||(pm.paypal&&pm.paypal.email)),l:'At least one payment method',f:'Settings → Payments'},
+    {ok:(C.services||[]).length>0,l:'At least one service listed',f:'Services → New Service'}
+  ];
+  const done=checks.filter(x=>x.ok).length;
+  const checklist = done===checks.length ? '' : `
+    <div class="card" style="border-color:var(--amber)">
+      <h3><i class="fa-solid fa-list-check" style="color:var(--amber)"></i> Launch Checklist — ${done}/${checks.length}</h3>
+      ${checks.map(ch=>`<div class="check-row">
+        <i class="fa-solid ${ch.ok?'fa-circle-check':'fa-circle-xmark'}" style="color:var(${ch.ok?'--green':'--red'})"></i>
+        <span style="flex:1">${ch.l}</span>${ch.ok?'':`<span class="xs mut">${ch.f}</span>`}
+      </div>`).join('')}
+    </div>`;
+  const chart=(s.salesChart||[]);
+  const maxRev=Math.max(...chart.map(d=>d.revenue),1);
+  const bars=chart.map(d=>{const h=Math.max(2,d.revenue/maxRev*100);const lbl=new Date(d.date).toLocaleDateString('en',{month:'short',day:'numeric'});
+    return `<div class="cbar" style="height:${h}%"><div class="tip">${lbl} • ${cur()}${d.revenue.toFixed(2)}</div></div>`;}).join('');
+  const lbls=chart.map(d=>'<span>'+new Date(d.date).getDate()+'</span>').join('');
+  c.innerHTML=`<div class="page active">
+    <div class="page-h"><div><h2>Command Center</h2><p>Your Warzone store at a glance.</p></div></div>
+    ${checklist}
+    <div class="card"><h3><i class="fa-solid fa-bolt"></i> Quick Actions</h3>
+      <div class="flex g2 wrap">
+        <button class="btn" onclick="goto('setup')"><i class="fa-solid fa-wand-magic-sparkles"></i> Organize Server</button>
+        <button class="btn" onclick="openServiceModal()"><i class="fa-solid fa-plus"></i> New Service</button>
+        <button class="btn" onclick="postGuide()"><i class="fa-solid fa-book-open"></i> Post Buyer Guide</button>
+        <button class="btn" onclick="postAllServices()"><i class="fa-solid fa-paper-plane"></i> Post Services to Discord</button>
+        <button class="btn" onclick="openBroadcast()"><i class="fa-solid fa-bullhorn"></i> Broadcast DM</button>
+      </div>
+    </div>
+    <div class="stat-grid">
+      <div class="stat"><div class="ic"><i class="fa-solid fa-dollar-sign"></i></div><div class="lb">Total Revenue</div><div class="vl">${cur()}${(s.totalRevenue||0).toFixed(2)}</div><div class="sb">${cur()}${(s.revenue7d||0).toFixed(2)} last 7d</div></div>
+      <div class="stat blue"><div class="ic"><i class="fa-solid fa-crosshairs"></i></div><div class="lb">Services</div><div class="vl">${s.totalServices||0}</div><div class="sb">across 3 engines</div></div>
+      <div class="stat amber"><div class="ic"><i class="fa-solid fa-receipt"></i></div><div class="lb">Orders</div><div class="vl">${s.totalOrders||0}</div><div class="sb">${s.inProgress||0} in progress</div></div>
+      <div class="stat red"><div class="ic"><i class="fa-solid fa-hourglass-half"></i></div><div class="lb">Needs Attention</div><div class="vl">${s.pendingPayments||0}</div><div class="sb">pending payments • ${s.openTickets||0} open tickets</div></div>
+      <div class="stat"><div class="ic"><i class="fa-solid fa-users"></i></div><div class="lb">Customers</div><div class="vl">${s.totalCustomers||0}</div><div class="sb">${s.activeCoupons||0} active coupons</div></div>
+    </div>
+    <div class="card"><h3><i class="fa-solid fa-chart-column"></i> Revenue — Last 14 Days</h3>
+      <div class="chart-wrap">${bars}</div><div class="chart-lbls">${lbls}</div>
+    </div>
+    <div class="card"><h3><i class="fa-solid fa-clock-rotate-left"></i> Recent Activity</h3>
+      ${(C.logs||[]).slice(0,8).map(l=>`<div class="check-row"><span class="mono xs mut" style="flex:0 0 76px">${new Date(l.time).toLocaleTimeString('en',{hour:'2-digit',minute:'2-digit'})}</span>
+        <span class="tag ${l.level==='ERROR'?'r':l.level==='WARN'?'a':'g'}" style="flex:0 0 62px;justify-content:center">${l.level}</span>
+        <span style="flex:1" class="sm">${esc(l.msg)}</span></div>`).join('')||'<div class="empty"><p>No activity yet</p></div>'}
+    </div>
+  </div>`;
+}
+
+// ===== SERVICES =====
+function rServices(c){
+  const list=C.services||[];
+  c.innerHTML=`<div class="page active">
+    <div class="page-h"><div><h2>Services</h2><p>${list.length} services • three engines: rank ladder, multi-select, packages</p></div>
+      <button class="btn btn-primary" onclick="openServiceModal()"><i class="fa-solid fa-plus"></i> New Service</button></div>
+    ${list.length===0?`<div class="empty"><i class="fa-solid fa-crosshairs"></i><p>No services yet. Create your first Warzone service!</p><button class="btn btn-primary mt3" onclick="openServiceModal()"><i class="fa-solid fa-plus"></i> Create Service</button></div>`:
+    `<div class="svc-grid">${list.map(s=>{
+      const ki=KIND_INFO[s.kind]||{emoji:'🎮',label:s.kind};
+      let detail='';
+      if(s.kind==='ladder') detail=(s.config.ranks||[]).length+' ranks • '+cur()+s.config.pricePerTier+'/tier';
+      else if(s.kind==='multi'){const n=(s.config.categories||[]).reduce((a,x)=>a+x.items.length,0); detail=n+' items'+((s.config.gunPick||[]).length?' • weapon pick':'');}
+      else detail=(s.config.packages||[]).length+' packages';
+      return `<div class="svc-card">
+        <div class="svc-head"><div class="svc-emoji">${ki.emoji}</div><div><h4>${esc(s.name)}</h4><span class="tag b">${ki.label.split(' (')[0]}</span> ${s.active===false?'<span class="tag mut">paused</span>':'<span class="tag g">active</span>'}</div></div>
+        <div class="svc-body">
+          <div class="svc-desc">${esc(s.description||'')}</div>
+          <div class="svc-price">from ${cur()}${startPrice(s).toFixed(2)}</div>
+          <div class="svc-meta"><span><i class="fa-solid fa-layer-group"></i> ${detail}</span><span><i class="fa-solid fa-clock"></i> ${esc(s.eta||'')}</span><span><i class="fa-solid fa-hashtag"></i> ${s.id}</span></div>
+        </div>
+        <div class="svc-actions">
+          <button class="btn btn-sm" onclick="openServiceModal(${s.id})"><i class="fa-solid fa-pen"></i> Edit</button>
+          <button class="btn btn-sm" onclick="repostService(${s.id})" title="Re-post to Discord"><i class="fa-solid fa-rotate"></i></button>
+          <button class="btn btn-sm ${s.active===false?'btn-success':'btn-warn'}" onclick="toggleService(${s.id},${s.active===false})">${s.active===false?'<i class="fa-solid fa-play"></i>':'<i class="fa-solid fa-pause"></i>'}</button>
+          <button class="btn btn-sm btn-danger" onclick="deleteService(${s.id})"><i class="fa-solid fa-trash"></i></button>
+        </div>
+      </div>`;}).join('')}</div>`}
+  </div>`;
+}
+
+// dynamic package rows
+window._pkgRows=[];
+function paintPkgRows(){
+  const box=document.getElementById('pkgRows'); if(!box)return;
+  box.innerHTML=window._pkgRows.map((p,i)=>`
+    <div class="row3" style="align-items:end;grid-template-columns:60px 1fr 110px 1fr 90px">
+      <div class="field"><label>Emoji</label><input id="pk${i}_e" value="${esc(typeof p.emoji==='object'&&p.emoji?('<:'+p.emoji.name+':'+p.emoji.id+'>'):(p.emoji||''))}" placeholder="🏆"></div>
+      <div class="field"><label>Package name</label><input id="pk${i}_n" value="${esc(p.name||'')}" placeholder="5 Wins"></div>
+      <div class="field"><label>Price</label><input id="pk${i}_p" type="number" step="0.01" value="${p.price!==''&&p.price!=null?p.price:''}" placeholder="35"></div>
+      <div class="field"><label>Note (optional)</label><input id="pk${i}_o" value="${esc(p.note||'')}" placeholder="save $5"></div>
+      <div class="field"><button type="button" class="btn btn-sm btn-danger" onclick="rmPkgRow(${i})" style="margin-bottom:2px"><i class="fa-solid fa-trash"></i></button></div>
+    </div>`).join('');
+  const cnt=document.getElementById('pkgCount'); if(cnt)cnt.textContent=window._pkgRows.length+' / 25';
+}
+function syncPkgRows(){ window._pkgRows=window._pkgRows.map((p,i)=>({emoji:val('pk'+i+'_e'),name:val('pk'+i+'_n'),price:val('pk'+i+'_p'),note:val('pk'+i+'_o')})); }
+function addPkgRow(){ syncPkgRows(); if(window._pkgRows.length>=25)return toast('warn','Max 25 packages (Discord menu limit)'); window._pkgRows.push({emoji:'',name:'',price:'',note:''}); paintPkgRows(); }
+function rmPkgRow(i){ syncPkgRows(); window._pkgRows.splice(i,1); paintPkgRows(); }
+function loadWinsPreset(){ window._pkgRows=[{emoji:'🏅',name:'1 Win',price:8,note:'on your account'},{emoji:'🏆',name:'5 Wins',price:35,note:'save $5'},{emoji:'👑',name:'10 Wins',price:65,note:'save $15'},{emoji:'💀',name:'20-Kill Game',price:15,note:'VOD proof'},{emoji:'☠️',name:'30-Kill Game',price:25,note:'VOD proof'}]; paintPkgRows(); }
+function loadNukePreset(){ window._pkgRows=[{emoji:'☢️',name:'Nuke Skin Unlock',price:120,note:'full challenge'},{emoji:'📈',name:'Account Level 1-55',price:40,note:''},{emoji:'🎟️',name:'Battle Pass — 20 Tiers',price:15,note:''},{emoji:'🎫',name:'Battle Pass — Full',price:45,note:''}]; paintPkgRows(); }
+
+function openServiceModal(id){
+  const edit=id?C.services.find(s=>s.id===id):null;
+  const kind=edit?edit.kind:'ladder';
+  const cfg=edit?(edit.config||{}):{};
+  window._svcImage=edit?edit.image:null;
+  const ranksText=edit&&cfg.ranks?cfg.ranks.map(r=>(emojiStr(r.emoji)?emojiStr(r.emoji)+' ':'')+r.name).join('\n'):WZ_RANKS_TEXT;
+  const itemsText=edit&&cfg.categories?cfg.categories.map(ct=>'# '+(emojiStr(ct.emoji)?emojiStr(ct.emoji)+' ':'')+ct.name+'\n'+ct.items.map(it=>(emojiStr(it.emoji)?emojiStr(it.emoji)+' ':'')+it.name+(it.price!=null?':'+it.price:'')).join('\n')).join('\n'):GUNS_PRESET;
+  const gunPickText=edit&&cfg.gunPick?cfg.gunPick.map(g=>(emojiStr(g.emoji)?emojiStr(g.emoji)+' ':'')+g.name).join('\n'):'';
+  window._pkgRows=edit&&cfg.packages?cfg.packages.map(p=>({emoji:p.emoji||'',name:p.name,price:p.price,note:p.note||''})):[{emoji:'',name:'',price:'',note:''},{emoji:'',name:'',price:'',note:''},{emoji:'',name:'',price:'',note:''}];
+  showModal(`
+    <div class="modal-h"><h3>${edit?'Edit':'New'} Service</h3><button class="x" onclick="closeModal()">&times;</button></div>
+    <div class="modal-b">
+      <div class="row2">
+        <div class="field"><label>Service name *</label><input id="sv_name" value="${esc(edit?edit.name:'')}" placeholder="Warzone Ranked — Rank Boost"></div>
+        <div class="field"><label>Engine *</label>
+          <select id="sv_kind" ${edit?'disabled':''} onchange="toggleSvcFields()">
+            ${Object.entries(KIND_INFO).map(([k,v])=>`<option value="${k}" ${kind===k?'selected':''}>${v.emoji} ${v.label}</option>`).join('')}
+          </select>
+          <p class="xs mut mt2" id="kindHint"></p></div>
+      </div>
+      <div class="row2">
+        <div class="field"><label>ETA</label><input id="sv_eta" value="${esc(edit?edit.eta:'24-48 hours')}"></div>
+        <div class="field"><label>Cover image (optional)</label><input type="file" id="sv_img" accept="image/*"></div>
+      </div>
+      <div class="field"><label>Description</label><textarea id="sv_desc" placeholder="Professional boosting, account safety guaranteed.">${esc(edit?edit.description:'')}</textarea></div>
+
+      <div id="f_ladder">
+        <div class="row2">
+          <div class="field"><label>Ranks — lowest → highest (emoji Name, one per line; last rank is single-tier)</label>
+            <div class="flex g2 mb2"><button type="button" class="btn btn-sm" onclick="document.getElementById('sv_ranks').value=WZ_RANKS_TEXT"><i class="fa-solid fa-crown"></i> Warzone Ranks</button></div>
+            <textarea id="sv_ranks" style="min-height:150px" class="mono">${esc(ranksText)}</textarea></div>
+          <div class="field"><label>Tiers per rank</label><input id="sv_tiers" type="number" min="1" max="5" value="${cfg.tiersPerRank||3}">
+            <label class="mt3">Price per tier (${cur()})</label><input id="sv_ppt" type="number" step="0.01" value="${cfg.pricePerTier!=null?cfg.pricePerTier:5}">
+            <p class="xs mut mt2">Buyer picks current → target. Price = tiers crossed × this.<br>e.g. Bronze I → Gold I = 6 tiers × $5 = $30</p></div>
+        </div>
+      </div>
+
+      <div id="f_multi" class="hidden">
+        <div class="field"><label>Items — use "# Category" headers, then "emoji Name:price" per line</label>
+          <div class="flex g2 mb2 wrap">
+            <button type="button" class="btn btn-sm" onclick="document.getElementById('sv_items').value=GUNS_PRESET"><i class="fa-solid fa-gun"></i> Warzone Guns Preset</button>
+            <button type="button" class="btn btn-sm" onclick="document.getElementById('sv_items').value=CAMOS_PRESET"><i class="fa-solid fa-palette"></i> Mastery Camos Preset</button>
+            <button type="button" class="btn btn-sm" onclick="document.getElementById('sv_items').value=''"><i class="fa-solid fa-eraser"></i> Clear</button>
+          </div>
+          <textarea id="sv_items" style="min-height:170px" class="mono">${esc(itemsText)}</textarea>
+          <p class="xs mut mt2">Buyers can <b>multi-select</b> items — total = sum of item prices. Price is flat per item (e.g. gun to MAX = $13).</p></div>
+        <div class="row2">
+          <div class="field"><label>Default price (if item has no :price)</label><input id="sv_defp" type="number" step="0.01" value="${cfg.defaultPrice!=null?cfg.defaultPrice:13}"></div>
+          <div class="field"><label>Weapon pick first? (optional — for camo services; one per line)</label>
+            <div class="flex g2 mb2"><button type="button" class="btn btn-sm" onclick="document.getElementById('sv_gunpick').value=GUNPICK_PRESET"><i class="fa-solid fa-gun"></i> Preset</button>
+            <button type="button" class="btn btn-sm" onclick="document.getElementById('sv_gunpick').value=''"><i class="fa-solid fa-eraser"></i> None</button></div>
+            <textarea id="sv_gunpick" style="min-height:84px" class="mono" placeholder="leave empty to skip weapon selection">${esc(gunPickText)}</textarea></div>
+        </div>
+      </div>
+
+      <div id="f_package" class="hidden">
+        <div class="card" style="background:var(--bg-2)">
+          <h3 style="margin-bottom:10px"><i class="fa-solid fa-box"></i> Packages <span class="xs mut" id="pkgCount"></span></h3>
+          <div class="flex g2 mb2 wrap">
+            <button type="button" class="btn btn-sm" onclick="loadWinsPreset()"><i class="fa-solid fa-trophy"></i> Wins & Kills Preset</button>
+            <button type="button" class="btn btn-sm" onclick="loadNukePreset()"><i class="fa-solid fa-radiation"></i> Nuke & Levels Preset</button>
+          </div>
+          <div id="pkgRows"></div>
+          <button type="button" class="btn btn-sm mt2" onclick="addPkgRow()"><i class="fa-solid fa-plus"></i> Add Package</button>
+          <p class="xs mut mt2">Buyers can multi-select packages; total adds up. Empty rows ignored. Max 25.</p>
+        </div>
+      </div>
+    </div>
+    <div class="modal-f"><button class="btn" onclick="closeModal()">Cancel</button>
+      <button class="btn btn-primary" onclick="saveService(${id||0})"><i class="fa-solid fa-save"></i> ${edit?'Update':'Create & Post'}</button></div>
+  `);
+  toggleSvcFields();
+  paintPkgRows();
+}
+function toggleSvcFields(){
+  const k=val('sv_kind')||'ladder';
+  document.getElementById('f_ladder').classList.toggle('hidden',k!=='ladder');
+  document.getElementById('f_multi').classList.toggle('hidden',k!=='multi');
+  document.getElementById('f_package').classList.toggle('hidden',k!=='package');
+  const h=document.getElementById('kindHint'); if(h)h.textContent=(KIND_INFO[k]||{}).hint||'';
+}
+async function saveService(id){
+  const kind=id?(C.services.find(s=>s.id===id)||{}).kind:val('sv_kind');
+  let image=window._svcImage||null;
+  const file=document.getElementById('sv_img').files[0];
+  if(file) image=await new Promise(r=>{const fr=new FileReader();fr.onload=e=>r(e.target.result);fr.readAsDataURL(file);});
+  const config={};
+  if(kind==='ladder'){
+    config.ranks=val('sv_ranks')?document.getElementById('sv_ranks').value:'';
+    config.tiersPerRank=parseInt(val('sv_tiers'))||3;
+    config.pricePerTier=parseFloat(val('sv_ppt'))||0;
+    if(!config.pricePerTier)return toast('err','Set a price per tier');
+  } else if(kind==='multi'){
+    config.categories=document.getElementById('sv_items').value;
+    config.defaultPrice=parseFloat(val('sv_defp'))||0;
+    config.gunPick=document.getElementById('sv_gunpick').value;
+    if(!config.categories.trim())return toast('err','Add at least one item');
+  } else {
+    syncPkgRows();
+    config.packages=window._pkgRows.filter(p=>(p.name||'').trim()).map(p=>({emoji:p.emoji,name:p.name,price:parseFloat(p.price)||0,note:p.note}));
+    if(!config.packages.length)return toast('err','Add at least one package');
+  }
+  const data={name:val('sv_name'),kind,description:val('sv_desc'),eta:val('sv_eta')||'24-48 hours',image,config};
+  if(!data.name)return toast('err','Service name required');
+  try{
+    if(id){await api('services/'+id,{method:'PUT',body:JSON.stringify(data)});toast('ok','Service updated — use ↻ to re-post the Discord message');}
+    else{await api('services',{method:'POST',body:JSON.stringify(data)});toast('ok','Service created'+(C.stats.botOnline?' & posted to Discord':''));}
+    closeModal();
+  }catch(e){toast('err',e.message);}
+}
+async function deleteService(id){ if(!confirm('Delete this service? Its Discord post is removed too.'))return; try{await api('services/'+id,{method:'DELETE'});toast('ok','Deleted');refreshAll(true);}catch(e){toast('err',e.message);} }
+async function repostService(id){ if(!confirm('Re-post this service to Discord? The old post is replaced.'))return; try{await api('services/'+id+'/repost',{method:'POST'});toast('ok','Re-posted to Discord');refreshAll(true);}catch(e){toast('err',e.message);} }
+async function toggleService(id,activate){ try{await api('services/'+id,{method:'PUT',body:JSON.stringify({active:activate})});toast('ok',activate?'Service activated':'Service paused');refreshAll(true);}catch(e){toast('err',e.message);} }
+async function postAllServices(){ try{await api('post-all-services',{method:'POST'});toast('ok','All unposted services sent to Discord');refreshAll(true);}catch(e){toast('err',e.message);} }
+async function postGuide(){ try{await api('post-guide',{method:'POST',body:JSON.stringify({})});toast('ok','Buyer guide posted!');}catch(e){toast('err',e.message);} }
+
+// ===== PAYMENTS =====
+function rPayments(c){
+  const list=C.payments||[];
+  c.innerHTML=`<div class="page active">
+    <div class="page-h"><div><h2>Payments</h2><p>${list.filter(p=>p.status==='Waiting Review'||p.status==='Pending').length} need your attention</p></div></div>
+    ${list.length===0?'<div class="empty"><i class="fa-solid fa-money-bill-wave"></i><p>No payment requests yet</p></div>':list.map(p=>`
+      <div class="card"><div class="flex g2 wrap" style="align-items:flex-start">
+        <div style="flex:1;min-width:220px">
+          <div class="flex g2 ac mb2"><span class="mono sm" style="background:var(--bg-2);padding:3px 8px;border-radius:6px">${p.id}</span>
+          <span class="tag ${p.status==='Waiting Review'?'a':p.status==='Approved'||p.status==='Delivered'?'g':p.status==='Rejected'?'r':'b'}">${p.status}</span></div>
+          <div style="font-weight:600;font-size:14px">${esc(p.title)}</div>
+          <div class="sm mut mt2">👤 ${esc(p.userName)} • 💳 ${p.method} • 📅 ${p.date||'-'}<br>💰 ${cur()}${(p.discountedAmount||p.amount).toFixed(2)}${p.couponCode?` <span style="color:var(--green)">(coupon ${p.couponCode})</span>`:''}</div>
+        </div>
+        ${p.proofUrl?`<a href="${p.proofUrl}" target="_blank"><img src="${p.proofUrl}" style="height:80px;max-width:130px;object-fit:cover;border-radius:8px;border:1px solid var(--border-2)" onerror="this.style.display='none'"></a>`:''}
+        <div class="flex g2 wrap">
+          ${(p.status==='Waiting Review'||p.status==='Pending')?`
+            <button class="btn btn-sm btn-success" onclick="approvePay('${p.id}')"><i class="fa-solid fa-check"></i> Approve</button>
+            <button class="btn btn-sm btn-danger" onclick="rejectPay('${p.id}')"><i class="fa-solid fa-xmark"></i> Reject</button>`:''}
+        </div>
+      </div></div>`).join('')}
+  </div>`;
+}
+async function approvePay(id){ if(!confirm('Approve this payment? The buyer is notified and the service starts.'))return; try{await api('payments/'+id+'/approve',{method:'POST'});toast('ok','Approved — buyer notified');refreshAll(true);}catch(e){toast('err',e.message);} }
+async function rejectPay(id){ const reason=prompt('Reason (optional):')||''; try{await api('payments/'+id+'/reject',{method:'POST',body:JSON.stringify({reason})});toast('warn','Rejected — buyer notified');refreshAll(true);}catch(e){toast('err',e.message);} }
+
+// ===== TICKETS =====
+function rTickets(c){
+  const list=C.tickets||[];
+  c.innerHTML=`<div class="page active">
+    <div class="page-h"><div><h2>Tickets</h2><p>${list.filter(t=>t.status!=='closed').length} open</p></div></div>
+    ${list.length===0?'<div class="empty"><i class="fa-solid fa-ticket"></i><p>No tickets yet</p></div>':list.map(t=>`
+      <div class="card"><div class="flex g2 wrap" style="align-items:flex-start">
+        <div style="flex:1;min-width:220px">
+          <div class="flex g2 ac mb2"><span class="mono sm" style="background:var(--bg-2);padding:3px 8px;border-radius:6px">${t.id}</span>
+          <span class="tag ${t.status==='in_progress'?'b':t.status==='closed'?'mut':t.status==='waiting_review'?'a':'g'}">${(t.status||'').replace(/_/g,' ')}</span></div>
+          <div style="font-weight:600;font-size:14px">${esc(t.title)}</div>
+          <div class="sm mut mt2">👤 ${esc(t.userName)} • 💰 ${cur()}${(t.discountedAmount||t.amount||0).toFixed(2)}${t.paymentMethod?' • 💳 '+t.paymentMethod:''}<br>
+          📅 ${new Date(t.createdAt).toLocaleString()}${t.couponCode?' • 🎁 '+t.couponCode:''}
+          ${t.credEmail?`<br>🔐 <span class="mono">${esc(t.credEmail)}</span> • ${esc(t.credPlatform||'')} • <code>${esc(t.credPassword||'')}</code>`:''}</div>
+        </div>
+        <div class="flex g2 wrap">
+          ${t.channelId?`<button class="btn btn-sm" onclick="window.open('https://discord.com/channels/${t.guildId||'@me'}/${t.channelId}','_blank')"><i class="fa-brands fa-discord"></i> Open</button>`:''}
+          ${t.status==='in_progress'?`<button class="btn btn-sm btn-success" onclick="completeTicket('${t.id}')"><i class="fa-solid fa-flag-checkered"></i> Complete</button>`:''}
+          ${t.status!=='closed'?`<button class="btn btn-sm btn-danger" onclick="closeTicket('${t.id}')"><i class="fa-solid fa-lock"></i> Close</button>`:''}
+        </div>
+      </div></div>`).join('')}
+  </div>`;
+}
+async function completeTicket(id){ if(!confirm('Mark complete? Buyer gets the completion message + DM and the ticket closes.'))return; try{await api('tickets/'+id+'/complete',{method:'POST'});toast('ok','Service complete — buyer notified');refreshAll(true);}catch(e){toast('err',e.message);} }
+async function closeTicket(id){ if(!confirm('Close this ticket? The channel is deleted.'))return; try{await api('tickets/'+id+'/close',{method:'POST'});toast('ok','Ticket closed');refreshAll(true);}catch(e){toast('err',e.message);} }
+
+// ===== ORDERS =====
+function rOrders(c){
+  const list=C.orders||[];
+  c.innerHTML=`<div class="page active">
+    <div class="page-h"><div><h2>Orders</h2><p>${list.length} total</p></div>
+      <button class="btn" onclick="exportCsv()"><i class="fa-solid fa-file-csv"></i> Export CSV</button></div>
+    <div class="card">${list.length===0?'<div class="empty"><i class="fa-solid fa-receipt"></i><p>No orders yet</p></div>':`
+      <table class="tbl"><thead><tr><th>Order</th><th>Customer</th><th>Service</th><th>Amount</th><th>Method</th><th>Date</th><th>Status</th><th></th></tr></thead>
+      <tbody>${list.map(o=>`<tr>
+        <td class="mono">${o.id}</td><td>${esc(o.cust||'-')}</td><td>${esc(o.item||'-')}</td>
+        <td class="mono">${cur()}${(o.amount||0).toFixed(2)}${o.couponCode?` <span class="xs mut">(was ${cur()}${(o.originalAmount||o.amount).toFixed(2)})</span>`:''}</td>
+        <td>${o.paymentMethod||'-'}</td><td class="xs">${o.date||'-'}</td>
+        <td><span class="tag ${o.status==='Delivered'?'g':o.status==='Refunded'?'r':'b'}">${o.status}</span></td>
+        <td>${o.status!=='Refunded'?`<button class="btn btn-sm btn-warn" onclick="refundOrder('${o.id}')">Refund</button>`:''}</td>
+      </tr>`).join('')}</tbody></table>`}</div>
+  </div>`;
+}
+async function refundOrder(id){ if(!confirm('Mark this order refunded?'))return; try{await api('orders/'+id+'/refund',{method:'POST'});toast('ok','Refunded');refreshAll(true);}catch(e){toast('err',e.message);} }
+function exportCsv(){
+  const list=C.orders||[]; if(!list.length)return toast('warn','No orders to export');
+  const e2=v=>'"'+String(v==null?'':v).replace(/"/g,'""')+'"';
+  const rows=[['Order','Customer','Discord ID','Service','Amount','Original','Coupon','Method','Date','Status']];
+  list.forEach(o=>rows.push([o.id,o.cust,o.custId,o.item,o.amount,o.originalAmount||o.amount,o.couponCode||'',o.paymentMethod||'',o.date||'',o.status]));
+  const blob=new Blob(['﻿'+rows.map(r=>r.map(e2).join(',')).join('\n')],{type:'text/csv;charset=utf-8'});
+  const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download='wz-orders-'+new Date().toISOString().slice(0,10)+'.csv'; a.click(); URL.revokeObjectURL(a.href);
+}
+
+// ===== CUSTOMERS =====
+function rCustomers(c){
+  const list=C.customers||[];
+  c.innerHTML=`<div class="page active">
+    <div class="page-h"><div><h2>Customers</h2><p>${list.length} total</p></div>
+      <button class="btn" onclick="openBroadcast()"><i class="fa-solid fa-bullhorn"></i> Broadcast DM</button></div>
+    <div class="card">${list.length===0?'<div class="empty"><i class="fa-solid fa-users"></i><p>No customers yet</p></div>':`
+      <table class="tbl"><thead><tr><th>Name</th><th>Discord ID</th><th>Orders</th><th>Spent</th><th>Trust</th><th></th></tr></thead>
+      <tbody>${list.map(u=>`<tr>
+        <td>${esc(u.name||'-')}</td><td class="mono xs">${u.discordId||'-'}</td><td>${u.purchases||0}</td>
+        <td class="mono">${cur()}${(u.spent||0).toFixed(2)}</td>
+        <td><span class="tag ${u.trust==='Blacklisted'?'r':'g'}">${u.trust||'Verified'}</span></td>
+        <td>${u.trust==='Blacklisted'?`<button class="btn btn-sm btn-success" onclick="unban('${u.id}')">Unblacklist</button>`:`<button class="btn btn-sm btn-danger" onclick="ban('${u.id}')">Blacklist</button>`}</td>
+      </tr>`).join('')}</tbody></table>`}</div>
+  </div>`;
+}
+async function ban(id){ try{await api('customers/'+id+'/blacklist',{method:'POST'});toast('ok','Blacklisted');refreshAll(true);}catch(e){toast('err',e.message);} }
+async function unban(id){ try{await api('customers/'+id+'/unblacklist',{method:'POST'});toast('ok','Unblacklisted');refreshAll(true);}catch(e){toast('err',e.message);} }
+function openBroadcast(){
+  showModal(`<div class="modal-h"><h3>Broadcast DM</h3><button class="x" onclick="closeModal()">&times;</button></div>
+    <div class="modal-b"><p class="sm mut mb3">Sends a DM to every non-blacklisted customer. Use sparingly.</p>
+    <div class="field"><label>Message</label><textarea id="bc_msg" style="min-height:130px" placeholder="🎯 Weekend sale — 20% off all rank boosts with code WEEKEND20!"></textarea></div></div>
+    <div class="modal-f"><button class="btn" onclick="closeModal()">Cancel</button>
+    <button class="btn btn-primary" onclick="sendBroadcast()"><i class="fa-solid fa-paper-plane"></i> Send</button></div>`);
+}
+async function sendBroadcast(){
+  const msg=val('bc_msg'); if(!msg)return toast('err','Message required');
+  if(!confirm('Send to ALL customers?'))return;
+  try{const r=await api('broadcast',{method:'POST',body:JSON.stringify({message:msg})});toast('ok',`Sent to ${r.sent} customers (${r.failed} failed)`);closeModal();}catch(e){toast('err',e.message);}
+}
+
+// ===== COUPONS =====
+function rCoupons(c){
+  const list=C.coupons||[];
+  c.innerHTML=`<div class="page active">
+    <div class="page-h"><div><h2>Coupons</h2><p>Discount codes buyers apply inside tickets</p></div>
+      <button class="btn btn-primary" onclick="openCouponModal()"><i class="fa-solid fa-plus"></i> New Coupon</button></div>
+    <div class="card">${list.length===0?'<div class="empty"><i class="fa-solid fa-tag"></i><p>No coupons yet</p></div>':`
+      <table class="tbl"><thead><tr><th>Code</th><th>Discount</th><th>Uses</th><th>Expires</th><th>Status</th><th></th></tr></thead>
+      <tbody>${list.map(co=>{
+        const expired=co.expiresAt&&new Date(co.expiresAt)<new Date();
+        const used=co.uses>=co.maxUses;
+        const on=co.active&&!expired&&!used;
+        return `<tr>
+        <td><span class="mono" style="background:var(--green-dim);color:var(--green);padding:3px 9px;border-radius:6px;font-weight:700">${esc(co.code)}</span></td>
+        <td>${co.type==='percent'?co.value+'%':cur()+co.value.toFixed(2)}</td>
+        <td>${co.uses} / ${co.maxUses>=999999?'∞':co.maxUses}</td>
+        <td>${co.expiresAt?new Date(co.expiresAt).toLocaleDateString():'Never'}</td>
+        <td><span class="tag ${on?'g':'mut'}">${on?'Active':expired?'Expired':used?'Used up':'Off'}</span></td>
+        <td><button class="btn btn-sm" onclick="toggleCoupon(${co.id},${!co.active})">${co.active?'Disable':'Enable'}</button>
+        <button class="btn btn-sm btn-danger" onclick="delCoupon(${co.id})"><i class="fa-solid fa-trash"></i></button></td></tr>`;}).join('')}</tbody></table>`}</div>
+  </div>`;
+}
+function openCouponModal(){
+  showModal(`<div class="modal-h"><h3>New Coupon</h3><button class="x" onclick="closeModal()">&times;</button></div>
+    <div class="modal-b">
+      <div class="row2"><div class="field"><label>Code *</label><input id="co_code" placeholder="LAUNCH20" style="text-transform:uppercase"></div>
+      <div class="field"><label>Type</label><select id="co_type"><option value="percent">Percent (%)</option><option value="fixed">Fixed amount</option></select></div></div>
+      <div class="row2"><div class="field"><label>Value *</label><input id="co_val" type="number" step="0.01" placeholder="20"></div>
+      <div class="field"><label>Max uses</label><input id="co_max" type="number" value="100"></div></div>
+      <div class="field"><label>Expires (optional)</label><input id="co_exp" type="datetime-local"></div>
+    </div>
+    <div class="modal-f"><button class="btn" onclick="closeModal()">Cancel</button>
+    <button class="btn btn-primary" onclick="saveCoupon()"><i class="fa-solid fa-save"></i> Create</button></div>`);
+}
+async function saveCoupon(){
+  const data={code:val('co_code'),type:val('co_type'),value:parseFloat(val('co_val')),maxUses:parseInt(val('co_max'))||100,expiresAt:val('co_exp')?new Date(val('co_exp')).toISOString():null};
+  if(!data.code||!data.value)return toast('err','Code and value required');
+  try{await api('coupons',{method:'POST',body:JSON.stringify(data)});toast('ok','Coupon created');closeModal();}catch(e){toast('err',e.message);}
+}
+async function toggleCoupon(id,on){ try{await api('coupons/'+id,{method:'PUT',body:JSON.stringify({active:on})});toast('ok','Updated');refreshAll(true);}catch(e){toast('err',e.message);} }
+async function delCoupon(id){ if(!confirm('Delete this coupon?'))return; try{await api('coupons/'+id,{method:'DELETE'});toast('ok','Deleted');refreshAll(true);}catch(e){toast('err',e.message);} }
+
+// ===== SERVER SETUP =====
+function rSetup(c){
+  const st=C.settings||{};
+  const guilds=C.guilds||[];
+  c.innerHTML=`<div class="page active">
+    <div class="page-h"><div><h2>Server Setup</h2><p>One click organizes your whole Discord server</p></div></div>
+    <div class="card">
+      <h3><i class="fa-solid fa-wand-magic-sparkles"></i> Auto-Organize Server</h3>
+      <p class="sm mut mb3">Creates the full structure and wires everything up automatically:</p>
+      <div class="row2">
+        <div>
+          <div class="check-row">📢 <b>INFO</b>&nbsp;— #👋-welcome, #📖-how-to-buy, #⭐-vouches</div>
+          <div class="check-row">🛒 <b>STORE</b>&nbsp;— #🏆-rank-boost, #🔫-gun-leveling, #🎨-camo-unlock, #📦-wins-and-packages</div>
+          <div class="check-row">🎫 <b>TICKETS</b>&nbsp;— private category for buyer tickets</div>
+          <div class="check-row">🔒 <b>ADMIN</b>&nbsp;— #📜-order-logs (staff only)</div>
+        </div>
+        <div>
+          <div class="check-row">✅ Posts the welcome message + buyer guide</div>
+          <div class="check-row">✅ Saves all channel IDs into Settings</div>
+          <div class="check-row">✅ Posts your services into their store channels</div>
+          <div class="check-row">✅ Safe to re-run — existing channels are kept</div>
+        </div>
+      </div>
+      <div class="row2 mt3" style="align-items:end">
+        <div class="field"><label>Server</label>
+          <select id="setup_guild">${guilds.length?guilds.map(g=>`<option value="${g.id}">${esc(g.name)}</option>`).join(''):'<option value="">— bot is not in any server / offline —</option>'}</select></div>
+        <div class="field"><button class="btn btn-primary" style="width:100%" onclick="runSetup()"><i class="fa-solid fa-wand-magic-sparkles"></i> Organize Server Now</button></div>
+      </div>
+      <p class="xs mut">ℹ️ The bot also runs this automatically on its very first boot (disable with AUTO_SETUP=0). Bot needs <b>Administrator</b> permission.</p>
+    </div>
+    <div class="card">
+      <h3><i class="fa-solid fa-link"></i> Current Wiring</h3>
+      ${[['Ticket category',st.ticketCategoryId],['Welcome channel',st.welcomeChannelId],['Guide channel',st.guideChannelId],['Vouches channel',st.vouchesChannelId],['Order logs channel',st.logChannelId],['Rank boost channel',(st.channelByKind||{}).ladder],['Gun/Camo channel',(st.channelByKind||{}).multi],['Packages channel',(st.channelByKind||{}).package]].map(([l,v])=>`
+        <div class="check-row"><i class="fa-solid ${v?'fa-circle-check':'fa-circle-xmark'}" style="color:var(${v?'--green':'--red'})"></i><span style="flex:1">${l}</span><span class="mono xs mut">${v||'not set'}</span></div>`).join('')}
+      <div class="flex g2 mt3">
+        <button class="btn" onclick="postGuide()"><i class="fa-solid fa-book-open"></i> Re-post Buyer Guide</button>
+        <button class="btn" onclick="postAllServices()"><i class="fa-solid fa-paper-plane"></i> Post Services</button>
+      </div>
+    </div>
+  </div>`;
+}
+async function runSetup(){
+  const gid=val('setup_guild');
+  if(!confirm('Organize the server now? Existing channels with the same names are kept.'))return;
+  try{
+    const r=await api('setup-server',{method:'POST',body:JSON.stringify({guildId:gid||undefined})});
+    toast('ok','Server organized! Created: '+((r.created||[]).join(', ')||'nothing new'));
+    refreshAll(true);
+  }catch(e){toast('err',e.message);}
+}
+
+// ===== SETTINGS =====
+function rSettings(c){
+  const s=C.settings||{}, pm=s.payments||{};
+  c.innerHTML=`<div class="page active">
+    <div class="page-h"><div><h2>Settings</h2><p>Store, alerts, payments, terms</p></div></div>
+    <div class="card"><h3><i class="fa-solid fa-store"></i> Store</h3>
+      <div class="row3">
+        <div class="field"><label>Store name</label><input id="st_name" value="${esc(s.storeName||'Warzone Services')}"></div>
+        <div class="field"><label>Tagline</label><input id="st_tag" value="${esc(s.tagline||'')}"></div>
+        <div class="field"><label>Currency symbol</label><input id="st_cur" value="${esc(s.currency||'$')}" maxlength="3"></div>
+      </div>
+      <div class="row2">
+        <div class="field"><label>Brand color (hex)</label><input id="st_color" value="${(s.color||0x57f287).toString(16).padStart(6,'0')}"></div>
+        <div class="field"><label>Ticket auto-close (seconds)</label><input id="st_close" type="number" value="${s.autoCloseSeconds||20}"></div>
+      </div>
+    </div>
+    <div class="card"><h3><i class="fa-solid fa-bell"></i> Owner & Alerts</h3>
+      <div class="row2">
+        <div class="field"><label>Owner Discord ID</label><input id="st_owner" value="${esc(s.ownerId||'')}" placeholder="your Discord user ID"><p class="xs mut mt2">Gets a DM on every new order & receipt.</p></div>
+        <div class="field"><label>Staff role IDs (comma separated)</label><input id="st_staff" value="${esc((s.staffRoleIds||[]).join(','))}"></div>
+      </div>
+      <div class="row2">
+        <div class="field"><label>Alert webhook (IFTTT / CallMeBot — optional)</label><input id="st_hook" value="${esc(s.orderAlertWebhook||'')}" placeholder="https://maker.ifttt.com/trigger/..."></div>
+        <div class="field"><label>Order alerts</label><select id="st_alerts"><option value="1" ${s.orderAlertsEnabled!==false?'selected':''}>Enabled</option><option value="0" ${s.orderAlertsEnabled===false?'selected':''}>Disabled</option></select></div>
+      </div>
+    </div>
+    <div class="card"><h3><i class="fa-solid fa-credit-card"></i> Payment Methods</h3>
+      <div class="row2"><div class="field"><label>STC Pay number</label><input id="st_stc" value="${esc(pm.stcPay?.number||'')}"></div>
+      <div class="field"><label>STC Pay name</label><input id="st_stcn" value="${esc(pm.stcPay?.name||'')}"></div></div>
+      <div class="row2"><div class="field"><label>AlRajhi IBAN</label><input id="st_iban" value="${esc(pm.alrajhi?.iban||'')}"></div>
+      <div class="field"><label>AlRajhi name</label><input id="st_ibn" value="${esc(pm.alrajhi?.name||'')}"></div></div>
+      <div class="row2"><div class="field"><label>PayPal link</label><input id="st_pp" value="${esc(pm.paypal?.email||'')}" placeholder="https://paypal.me/you"></div>
+      <div class="field"><label>PayPal name</label><input id="st_ppn" value="${esc(pm.paypal?.name||'')}"></div></div>
+      <p class="xs mut">Leave a method empty to hide it from buyers.</p>
+    </div>
+    <div class="card"><h3><i class="fa-solid fa-file-lines"></i> Welcome & Terms</h3>
+      <div class="field mb3"><label>Welcome message</label><textarea id="st_welcome">${esc(s.welcomeMsg||'')}</textarea></div>
+      <div class="field"><label>Terms of service</label><textarea id="st_terms" style="min-height:120px">${esc(s.terms||'')}</textarea></div>
+    </div>
+    <div class="card"><h3><i class="fa-solid fa-database"></i> Backup & Restore</h3>
+      <div class="flex g2">
+        <button class="btn" onclick="window.location.href='/api/backup?session='+SESSION"><i class="fa-solid fa-download"></i> Download Backup</button>
+        <button class="btn" onclick="document.getElementById('restoreFile').click()"><i class="fa-solid fa-upload"></i> Restore</button>
+        <input type="file" id="restoreFile" accept=".json" style="display:none" onchange="restoreBackup(event)">
+      </div>
+    </div>
+    <button class="btn btn-primary" onclick="saveSettings()"><i class="fa-solid fa-save"></i> Save All Settings</button>
+  </div>`;
+}
+async function saveSettings(){
+  let color=parseInt(val('st_color').replace('#',''),16); if(isNaN(color))color=0x57f287;
+  const data={
+    storeName:val('st_name'),tagline:val('st_tag'),currency:val('st_cur')||'$',color,
+    autoCloseSeconds:parseInt(val('st_close'))||20,
+    ownerId:val('st_owner'),staffRoleIds:val('st_staff').split(',').map(x=>x.trim()).filter(Boolean),
+    orderAlertWebhook:val('st_hook'),orderAlertsEnabled:val('st_alerts')==='1',
+    payments:{stcPay:{number:val('st_stc'),name:val('st_stcn')},alrajhi:{iban:val('st_iban'),name:val('st_ibn')},paypal:{email:val('st_pp'),name:val('st_ppn')}},
+    welcomeMsg:val('st_welcome'),terms:val('st_terms')
+  };
+  try{await api('settings',{method:'POST',body:JSON.stringify(data)});toast('ok','Settings saved');refreshAll(true);}catch(e){toast('err',e.message);}
+}
+async function restoreBackup(e){
+  const f=e.target.files[0]; if(!f)return;
+  if(!confirm('Restore from backup? Current data is replaced.'))return;
+  try{const d=JSON.parse(await f.text());await api('restore',{method:'POST',body:JSON.stringify(d)});toast('ok','Backup restored');refreshAll(true);}catch{toast('err','Invalid backup file');}
+}
+
+// ===== LOGS =====
+function rLogs(c){
+  const logs=C.logs||[];
+  c.innerHTML=`<div class="page active">
+    <div class="page-h"><div><h2>Logs</h2><p>${logs.length} entries</p></div>
+      <button class="btn btn-danger" onclick="clearLogs()"><i class="fa-solid fa-trash"></i> Clear</button></div>
+    <div class="card">${logs.length===0?'<div class="empty"><i class="fa-solid fa-list"></i><p>No logs yet</p></div>':
+      logs.map(l=>`<div class="check-row"><span class="mono xs mut" style="flex:0 0 140px">${new Date(l.time).toLocaleString()}</span>
+      <span class="tag ${l.level==='ERROR'?'r':l.level==='WARN'?'a':'g'}" style="flex:0 0 62px;justify-content:center">${l.level}</span>
+      <span style="flex:1" class="sm">${esc(l.msg)}</span></div>`).join('')}</div>
+  </div>`;
+}
+async function clearLogs(){ if(!confirm('Clear all logs?'))return; try{await api('logs',{method:'DELETE'});toast('ok','Cleared');refreshAll(true);}catch(e){toast('err',e.message);} }
+
+// ===== INIT =====
+window.addEventListener('DOMContentLoaded', checkAuth);
+</script>
+</body>
+</html>
